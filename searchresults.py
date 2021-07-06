@@ -1,3 +1,4 @@
+from requests.api import head
 from selectorlib import Extractor
 import requests 
 import json 
@@ -18,13 +19,15 @@ def scrape(url):
         'sec-fetch-mode': 'navigate',
         'sec-fetch-user': '?1',
         'sec-fetch-dest': 'document',
-        'referer': 'https://www.amazon.com/',
+        'referer': 'https://www.amazon.in/',
         'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',
     }
 
     # Download the page using requests
     print("Downloading %s"%url)
-    r = requests.get(url, headers=headers)
+    r = requests.get(url=url, headers=headers)
+    # r = requests.get(url, headers=headers, proxies=proxies)
+    
     # Simple check to check if page was blocked (Usually 503)
     if r.status_code > 500:
         if "To discuss automated access to Amazon data please contact" in r.text:
@@ -36,14 +39,17 @@ def scrape(url):
     return e.extract(r.text)
 
 # product_data = []
-with open("search_results_urls.txt",'r') as urllist, open('search_results_output.jsonl','w') as outfile:
-    for url in urllist.read().splitlines():
-        data = scrape(url) 
-        if data:
-            for product in data['products']:
-                product['search_url'] = url
-                print("Saving Product: %s"%product['title'])
-                json.dump(product,outfile)
-                outfile.write("\n")
-                # sleep(5)
+amazon_search_link = "https://www.amazon.in/s?k="
+key = input("\nEnter your search word:\n")
+amazon_search_link += key
+
+with open('search_results_output.jsonl','w') as outfile:    
+    data = scrape(amazon_search_link) 
+    if data:
+        for product in data['products']:
+            product['search_url'] = amazon_search_link
+            print("Saving Product: %s"%product['title'])
+            json_object = json.dumps(product, indent=4)
+            outfile.write(json_object)
+            sleep(1)
     
